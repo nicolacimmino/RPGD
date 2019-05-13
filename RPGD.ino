@@ -14,46 +14,64 @@
 //    along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#include "DieDisplay.h"
+#include <SSD1306AsciiAvrI2c.h>
 
 #define PIN_ENC_A 10
 #define PIN_ENC_B 11
 #define PIN_ENC_SW 12
+#define DISPLAY_I2C_ADDRESS 0x3C
 
 uint8_t counter;
 
+DieDisplay *dieDisplay;
+SSD1306AsciiAvrI2c *oled;
+
 void setup()
-{
+{    
     pinMode(PIN_ENC_A, INPUT_PULLUP);
     pinMode(PIN_ENC_B, INPUT_PULLUP);
     pinMode(PIN_ENC_SW, INPUT_PULLUP);
-    
-    displaySetup();
+        
     setupRotaryEncoder();
 
     initChargePump();
-    Serial.begin(115200);
+    Serial.begin(115200);    
+
+    oled = new SSD1306AsciiAvrI2c();
+    oled->begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
+
+    dieDisplay = new DieDisplay(oled);
+    dieDisplay->SetTitle((char*)"My Test");    
 }
 
 void loop()
 {
-    if(!isHighVoltageReseviourAboveMin()) {
-        displayRefresh();
-        chargeHighVoltageReserviour();
+    uint8_t throws[5] = {50, 12, 22, 34, 99};
+    
+    for(int ix=1; ix<6; ix++) {
+        dieDisplay->ShowResults(ix, throws);
+        delay(1000);
     }
+    
+    // if(!isHighVoltageReseviourAboveMin()) {
+    //     displayRefresh();
+    //     chargeHighVoltageReserviour();
+    // }
 
-    encoderScanKey();
-    displayRefresh();
-    Serial.println(analogRead(A0));
+    // encoderScanKey();
+    // displayRefresh();
+    // Serial.println(analogRead(A0));
 }
 
 void onEncoderLongKeyPress() {
     counter = 99;
-    displayRefresh();
+    //displayRefresh();
 }
 
 void onEncoderKeyPress() {
     counter = random(1, 10);   
-    displayRefresh();
+    //displayRefresh();
 }
 
 void onEncoderRotation(bool cwRotation) {
