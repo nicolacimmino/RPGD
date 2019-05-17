@@ -14,46 +14,65 @@
 //    along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+#include "Hardware.h"
 #include "DieDisplay.h"
+#include "DiceThrow.h"
+#include "RPGDConfiguration.h"
 #include <SSD1306AsciiAvrI2c.h>
-
-#define PIN_ENC_A 10
-#define PIN_ENC_B 11
-#define PIN_ENC_SW 12
-#define DISPLAY_I2C_ADDRESS 0x3C
+#include <EEPROM.h>
 
 uint8_t counter;
 
 DieDisplay *dieDisplay;
 SSD1306AsciiAvrI2c *oled;
+RPGDConfiguation *configuration;
+uint8_t currentThrowConfigurationIndex;
+DiceThrow *currentDiceThrow;
 
 void setup()
-{    
+{
+    // EEPROM.write(0, 4);
+    // EEPROM.write(1, 6);
+
+    // EEPROM.write(2, 5);
+    // EEPROM.write(3, 10);
+
+    // EEPROM.write(4, 0);
+    // EEPROM.write(5, 0);
+
     pinMode(PIN_ENC_A, INPUT_PULLUP);
     pinMode(PIN_ENC_B, INPUT_PULLUP);
     pinMode(PIN_ENC_SW, INPUT_PULLUP);
-        
+
     setupRotaryEncoder();
 
     initChargePump();
-    Serial.begin(115200);    
+    Serial.begin(115200);
 
     oled = new SSD1306AsciiAvrI2c();
     oled->begin(&Adafruit128x64, DISPLAY_I2C_ADDRESS);
 
     dieDisplay = new DieDisplay(oled);
-    dieDisplay->SetTitle((char*)"My Test");    
+
+    configuration = new RPGDConfiguation();
+
+    currentThrowConfigurationIndex = 0;
 }
 
 void loop()
 {
-    uint8_t throws[5] = {50, 12, 22, 34, 99};
+   encoderScanKey(); 
     
-    for(int ix=1; ix<6; ix++) {
-        dieDisplay->ShowResults(ix, throws);
-        delay(1000);
-    }
-    
+    // uint8_t throws[5] = {50, 12, 22, 34, 99};
+
+    // for (int ix = 1; ix < 6; ix++)
+    // {
+    //     dieDisplay->ShowResults(ix, throws);
+    //     delay(1000);
+    // }
+
+    //delete diceThrow;
+
     // if(!isHighVoltageReseviourAboveMin()) {
     //     displayRefresh();
     //     chargeHighVoltageReserviour();
@@ -64,16 +83,27 @@ void loop()
     // Serial.println(analogRead(A0));
 }
 
-void onEncoderLongKeyPress() {
+void onEncoderLongKeyPress()
+{
     counter = 99;
     //displayRefresh();
 }
 
-void onEncoderKeyPress() {
-    counter = random(1, 10);   
-    //displayRefresh();
+void onEncoderKeyPress()
+{    
+    RPGDConfiguation::DiceThrowConfiguation throwConfiguration = configuration->GetThrowConfiguration(currentThrowConfigurationIndex);
+    
+    dieDisplay->ShowResults(throwConfiguration.diceCount, currentDiceThrow->Throw());        
 }
 
-void onEncoderRotation(bool cwRotation) {
-    counter += cwRotation ? 1 : -1;
+void onEncoderRotation(bool cwRotation)
+{
+    currentThrowConfigurationIndex += cwRotation ? 1 : -1;
+    currentThrowConfigurationIndex = currentThrowConfigurationIndex % configuration->GetThrowConfigurationsCount();
+
+    RPGDConfiguation::DiceThrowConfiguation throwConfiguration = configuration->GetThrowConfiguration(currentThrowConfigurationIndex);
+
+    delete currentDiceThrow;
+    currentDiceThrow = new DiceThrow(throwConfiguration.diceCount, throwConfiguration.dieFacesCount);
+    dieDisplay->SetTitle(currentDiceThrow->GetTextualDescription());
 }
