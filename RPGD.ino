@@ -20,6 +20,7 @@
 #include "RPGDConfiguration.h"
 #include <SSD1306AsciiAvrI2c.h>
 #include <EEPROM.h>
+#include <RotaryEncoder.h>
 
 uint8_t counter;
 
@@ -28,6 +29,7 @@ SSD1306AsciiAvrI2c *oled;
 RPGDConfiguation *configuration;
 uint8_t currentThrowConfigurationIndex;
 DiceThrow *currentDiceThrow;
+RotaryEncoder rotaryEncoder;
 
 void setup()
 {
@@ -40,12 +42,6 @@ void setup()
     // EEPROM.write(4, 0);
     // EEPROM.write(5, 0);
 
-    pinMode(PIN_ENC_A, INPUT_PULLUP);
-    pinMode(PIN_ENC_B, INPUT_PULLUP);
-    pinMode(PIN_ENC_SW, INPUT_PULLUP);
-
-    setupRotaryEncoder();
-
     initChargePump();
     Serial.begin(115200);
 
@@ -57,12 +53,17 @@ void setup()
     configuration = new RPGDConfiguation();
 
     currentThrowConfigurationIndex = 0;
+
+    rotaryEncoder.begin(PIN_ENC_A, PIN_ENC_B, PIN_ENC_SW);
+    rotaryEncoder.registerOnClickCallback(onEncoderKeyPress);
+    rotaryEncoder.registerOnLongPressCallback(onEncoderLongKeyPress);
+    rotaryEncoder.registerOnRotationCallback(onEncoderRotation);
 }
 
 void loop()
 {
-   encoderScanKey(); 
-    
+    rotaryEncoder.loop();
+
     // uint8_t throws[5] = {50, 12, 22, 34, 99};
 
     // for (int ix = 1; ix < 6; ix++)
@@ -90,20 +91,24 @@ void onEncoderLongKeyPress()
 }
 
 void onEncoderKeyPress()
-{    
-    RPGDConfiguation::DiceThrowConfiguation throwConfiguration = configuration->GetThrowConfiguration(currentThrowConfigurationIndex);
-    
-    dieDisplay->ShowResults(throwConfiguration.diceCount, currentDiceThrow->Throw());        
+{
+    dieDisplay->ShowResults(currentDiceThrow->GetDiceCount(), currentDiceThrow->Throw());
 }
 
-void onEncoderRotation(bool cwRotation)
+void onEncoderRotation(bool cwRotation, int position)
 {
     currentThrowConfigurationIndex += cwRotation ? 1 : -1;
     currentThrowConfigurationIndex = currentThrowConfigurationIndex % configuration->GetThrowConfigurationsCount();
 
+    applyCurrentThrowConfiguration();
+}
+
+void applyCurrentThrowConfiguration()
+{
     RPGDConfiguation::DiceThrowConfiguation throwConfiguration = configuration->GetThrowConfiguration(currentThrowConfigurationIndex);
 
     delete currentDiceThrow;
     currentDiceThrow = new DiceThrow(throwConfiguration.diceCount, throwConfiguration.dieFacesCount);
     dieDisplay->SetTitle(currentDiceThrow->GetTextualDescription());
+    dieDisplay->ClearResults(currentDiceThrow->GetDiceCount());
 }

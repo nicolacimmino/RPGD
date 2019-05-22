@@ -34,6 +34,16 @@ DiceThrow::~DiceThrow()
     delete[] this->results;
 }
 
+uint8_t DiceThrow::GetDiceCount()
+{
+    return this->diceCount;
+}
+
+uint8_t DiceThrow::GetDieFaces()
+{
+    return this->dieFaces;
+}
+
 char *DiceThrow::GetTextualDescription()
 {
     sprintf(this->description, "%d x D%d", this->diceCount, this->dieFaces);

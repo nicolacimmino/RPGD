@@ -26,6 +26,8 @@ public:
   DiceThrow(uint8_t diceCount, uint8_t dieFaces);
   ~DiceThrow();
   char *GetTextualDescription();
+  uint8_t GetDiceCount();
+  uint8_t GetDieFaces();
   uint8_t *Throw();
 
 private:

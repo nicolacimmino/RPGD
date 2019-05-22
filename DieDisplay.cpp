@@ -37,11 +37,22 @@ void DieDisplay::SetTitle(char *title)
     oled->print(title);    
 }
 
-void DieDisplay::ShowResults(uint8_t throwsCount, uint8_t *throws)
+void DieDisplay::ClearResults(uint8_t throwsCount)
 {
     oled->setFont(lcdnums12x16);
     oled->set1X();
     oled->clear(0, oled->displayWidth(), 1, oled->displayRows());
+
+    for (uint8_t ix = 0; ix < throwsCount; ix++)
+    {
+        oled->setCursor(this->resultsLayouts[throwsCount - 1][ix][1], this->resultsLayouts[throwsCount - 1][ix][0]);
+        oled->print("-");
+    }
+}
+
+void DieDisplay::ShowResults(uint8_t throwsCount, uint8_t *throws)
+{
+    this->ClearResults(throwsCount);
 
     for (uint8_t ix = 0; ix < throwsCount; ix++)
     {
