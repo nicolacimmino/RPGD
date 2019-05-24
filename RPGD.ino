@@ -20,7 +20,8 @@
 #include "RPGDConfiguration.h"
 #include <SSD1306AsciiAvrI2c.h>
 #include <EEPROM.h>
-#include <RotaryEncoder.h>
+#include <RotaryEncoder.h> // https://github.com/nicolacimmino/RotaryEncoder
+#include <TRNG.h>          // https://github.com/nicolacimmino/TRNG
 
 uint8_t counter;
 
@@ -30,19 +31,26 @@ RPGDConfiguation *configuration;
 uint8_t currentThrowConfigurationIndex;
 DiceThrow *currentDiceThrow;
 RotaryEncoder rotaryEncoder;
+TRNG trng;
+
+void writeConfigurationToEEPROM()
+{
+    EEPROM.write(0, 4);
+    EEPROM.write(1, 6);
+    EEPROM.write(2, 5);
+    EEPROM.write(3, 10);
+    EEPROM.write(4, 2);
+    EEPROM.write(5, 100);
+    EEPROM.write(6, 1);
+    EEPROM.write(7, 6);
+    EEPROM.write(8, 0);
+    EEPROM.write(9, 0);
+}
 
 void setup()
 {
-    // EEPROM.write(0, 4);
-    // EEPROM.write(1, 6);
+    //writeConfigurationToEEPROM();
 
-    // EEPROM.write(2, 5);
-    // EEPROM.write(3, 10);
-
-    // EEPROM.write(4, 0);
-    // EEPROM.write(5, 0);
-
-    initChargePump();
     Serial.begin(115200);
 
     oled = new SSD1306AsciiAvrI2c();
@@ -50,9 +58,18 @@ void setup()
 
     dieDisplay = new DieDisplay(oled);
 
-    configuration = new RPGDConfiguation();
+    trng.begin(PIN_CHG_PUMP0, PIN_CHG_PUMP1, PIN_CHG_PUMP2, PIN_CHG_PUMP3, PIN_CHG_PUMP_SENSE, PIN_CHG_PUMP_NOISEIN);
 
+    dieDisplay->ShowEntropyWaitScreen();
+    while (!trng.isRandomDataReady())
+    {
+        trng.loop();
+        dieDisplay->ShowProgress();
+    }
+
+    configuration = new RPGDConfiguation();
     currentThrowConfigurationIndex = 0;
+    applyCurrentThrowConfiguration();
 
     rotaryEncoder.begin(PIN_ENC_A, PIN_ENC_B, PIN_ENC_SW);
     rotaryEncoder.registerOnClickCallback(onEncoderKeyPress);
@@ -63,31 +80,12 @@ void setup()
 void loop()
 {
     rotaryEncoder.loop();
-
-    // uint8_t throws[5] = {50, 12, 22, 34, 99};
-
-    // for (int ix = 1; ix < 6; ix++)
-    // {
-    //     dieDisplay->ShowResults(ix, throws);
-    //     delay(1000);
-    // }
-
-    //delete diceThrow;
-
-    // if(!isHighVoltageReseviourAboveMin()) {
-    //     displayRefresh();
-    //     chargeHighVoltageReserviour();
-    // }
-
-    // encoderScanKey();
-    // displayRefresh();
-    // Serial.println(analogRead(A0));
+    trng.loop();
 }
 
 void onEncoderLongKeyPress()
 {
-    counter = 99;
-    //displayRefresh();
+    applyCurrentThrowConfiguration();
 }
 
 void onEncoderKeyPress()
@@ -96,10 +94,13 @@ void onEncoderKeyPress()
 }
 
 void onEncoderRotation(bool cwRotation, int position)
-{
-    currentThrowConfigurationIndex += cwRotation ? 1 : -1;
-    currentThrowConfigurationIndex = currentThrowConfigurationIndex % configuration->GetThrowConfigurationsCount();
+{    
+    if ((currentThrowConfigurationIndex == 0 && !cwRotation) || (currentThrowConfigurationIndex == configuration->GetThrowConfigurationsCount() - 1 && cwRotation))
+    {        
+        return;
+    }
 
+    currentThrowConfigurationIndex += cwRotation ? 1 : -1;
     applyCurrentThrowConfiguration();
 }
 
@@ -108,7 +109,7 @@ void applyCurrentThrowConfiguration()
     RPGDConfiguation::DiceThrowConfiguation throwConfiguration = configuration->GetThrowConfiguration(currentThrowConfigurationIndex);
 
     delete currentDiceThrow;
-    currentDiceThrow = new DiceThrow(throwConfiguration.diceCount, throwConfiguration.dieFacesCount);
+    currentDiceThrow = new DiceThrow(throwConfiguration.diceCount, throwConfiguration.dieFacesCount, &trng);
     dieDisplay->SetTitle(currentDiceThrow->GetTextualDescription());
     dieDisplay->ClearResults(currentDiceThrow->GetDiceCount());
 }

@@ -19,11 +19,12 @@
 //
 
 #include <Arduino.h>
+#include <TRNG.h>
 
 class DiceThrow
 {
 public:
-  DiceThrow(uint8_t diceCount, uint8_t dieFaces);
+  DiceThrow(uint8_t diceCount, uint8_t dieFaces, TRNG *trng);
   ~DiceThrow();
   char *GetTextualDescription();
   uint8_t GetDiceCount();
@@ -35,4 +36,5 @@ private:
   uint8_t dieFaces;
   char *description;
   uint8_t *results;
+  TRNG *trng;
 };

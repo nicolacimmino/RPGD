@@ -29,12 +29,10 @@ void DieDisplay::SetTitle(char *title)
 {
     oled->setFont(System5x7);
     oled->set1X();
-    
-    oled->clear(0, oled->displayWidth(), 0, 0);
-    uint8_t xOffset = (oled->displayWidth() - (strlen(title) * 6 - 1)) / 2;
 
-    oled->setCursor(xOffset, 0);    
-    oled->print(title);    
+    oled->clear(0, oled->displayWidth(), 0, 0);
+    oled->setRow(0);
+    this->printCentered(title);
 }
 
 void DieDisplay::ClearResults(uint8_t throwsCount)
@@ -59,4 +57,44 @@ void DieDisplay::ShowResults(uint8_t throwsCount, uint8_t *throws)
         oled->setCursor(this->resultsLayouts[throwsCount - 1][ix][1], this->resultsLayouts[throwsCount - 1][ix][0]);
         oled->print(throws[ix]);
     }
+}
+
+void DieDisplay::ShowEntropyWaitScreen()
+{
+    oled->setFont(System5x7);
+    oled->set1X();
+    oled->clear();
+    oled->setCursor(0, 2);
+    this->printCentered("We are collecting");
+    this->printCentered("entropy...");
+}
+
+void DieDisplay::ShowProgress()
+{
+    static uint8_t progress = 0;
+    static unsigned long lastProgress = millis();
+    static const char *progressIndicators[] = {
+        "-",
+        "\\",
+        "|",
+        "/"
+    };
+
+    if (millis() - lastProgress < 200)
+    {        
+        return;
+    }
+
+    oled->setCursor(0, 5);
+    this->printCentered(progressIndicators[progress]);
+    
+    progress = (progress + 1) % 4;
+
+    lastProgress = millis();
+}
+
+void DieDisplay::printCentered(const char *text)
+{
+    oled->setCol((oled->displayWidth() - (strlen(text) * 6 - 1)) / 2);
+    oled->println(text);
 }

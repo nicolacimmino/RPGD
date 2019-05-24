@@ -27,7 +27,9 @@ public:
   void SetTitle(char *title);
   void ClearResults(uint8_t throwsCount);
   void ShowResults(uint8_t throwsCount, uint8_t *throws);
-
+  void ShowEntropyWaitScreen();
+  void ShowProgress();
+  
 private:
   SSD1306AsciiAvrI2c *oled;
 
@@ -44,4 +46,6 @@ private:
       {positions[0], positions[2], positions[4]},
       {positions[0], positions[1], positions[3], positions[4]},
       {positions[0], positions[1], positions[2], positions[3], positions[4]}};
+
+  void printCentered(const char *text);
 };

@@ -20,10 +20,11 @@
 
 #include "DiceThrow.h"
 
-DiceThrow::DiceThrow(uint8_t diceCount, uint8_t dieFaces)
+DiceThrow::DiceThrow(uint8_t diceCount, uint8_t dieFaces, TRNG *trng)
 {
     this->diceCount = diceCount;
     this->dieFaces = dieFaces;
+    this->trng = trng;
     this->description = new char[20];
     this->results = new uint8_t[diceCount];
 }
@@ -55,7 +56,11 @@ uint8_t *DiceThrow::Throw()
 {
     for (int ix = 0; ix < this->diceCount; ix++)
     {
-        this->results[ix] = 1 + random(this->dieFaces);
+        while(!trng->isRandomDataReady()) {
+            trng->loop();
+        }
+
+        this->results[ix] = 1 + (trng->getRandomByte() % this->dieFaces);
     }
 
     return this->results;

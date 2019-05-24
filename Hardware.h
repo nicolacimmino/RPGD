@@ -3,3 +3,9 @@
 #define PIN_ENC_B 11
 #define PIN_ENC_SW 12
 #define DISPLAY_I2C_ADDRESS 0x3C
+#define PIN_CHG_PUMP_NOISEIN A0
+#define PIN_CHG_PUMP_SENSE A1
+#define PIN_CHG_PUMP0 2
+#define PIN_CHG_PUMP1 3
+#define PIN_CHG_PUMP2 4
+#define PIN_CHG_PUMP3 5

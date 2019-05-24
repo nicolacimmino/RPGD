@@ -34,7 +34,7 @@ uint8_t RPGDConfiguation::GetThrowConfigurationsCount()
     }
   }
 
-  return EEPROM_THROW_CONFIG_MAX_ENTRIES - 1;
+  return EEPROM_THROW_CONFIG_MAX_ENTRIES;
 }
 
 RPGDConfiguation::DiceThrowConfiguation RPGDConfiguation::GetThrowConfiguration(uint8_t configurationIndex)
